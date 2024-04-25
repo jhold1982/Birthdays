@@ -6,15 +6,13 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
 	
 	// MARK: - PROPERTIES
-	@State private var friends: [Friend] = [
-		Friend(name: "Lindsay", birthday: Date(timeIntervalSince1970: 0)),
-		Friend(name: "Oliver", birthday: .now),
-		Friend(name: "Marigold", birthday: .now)
-	]
+	@Query private var friends: [Friend]
+	@Environment(\.modelContext) var modelContext
 	
 	@State private var newName: String = ""
 	@State private var newDate: Date = Date.now
@@ -23,14 +21,24 @@ struct ContentView: View {
 	// MARK: - VIEW BODY
     var body: some View {
         NavigationStack {
-			List(friends, id: \.name) { friend in
+			List(friends) { friend in
+				
 				HStack {
+					
+					if friend.isBirthdayToday {
+						Image(systemName: "birthday.cake")
+					}
+					
 					Text(friend.name)
+						.bold(friend.isBirthdayToday)
+					
 					Spacer()
+					
 					Text(
 						friend.birthday,
 						format: .dateTime.month(.wide).day().year()
 					)
+					
 				}
 			}
 			.navigationTitle("Birthdays")
@@ -58,8 +66,8 @@ struct ContentView: View {
 						// which come from the @State properties above
 						let newFriend = Friend(name: newName, birthday: newDate)
 						
-						// add the newFriend to the array of Friends (Append)
-						friends.append(newFriend)
+						// add the newFriend to the array of Friends modelContext
+						modelContext.insert(newFriend)
 						newName = ""
 						newDate = Date.now
 					}
@@ -68,10 +76,29 @@ struct ContentView: View {
 				.padding()
 				.background(.bar)
 			}
+			// swiftUI begins executing code in a Task before the view appears
+			// example data
+//			.task {
+//				
+//				modelContext.insert(
+//					Friend(
+//						name: "Lindsay",
+//						birthday: .now
+//					)
+//				)
+//				
+//				modelContext.insert(
+//					Friend(
+//						name: "Justin",
+//						birthday: Date(timeIntervalSince1970: 0)
+//					)
+//				)
+//			}
         }
     }
 }
 
 #Preview {
     ContentView()
+		.modelContainer(for: Friend.self, inMemory: true)
 }
